@@ -40,3 +40,16 @@
               (error "Incorrect password")))))
   dispatch)
 
+
+(define (make-joint account oldpass newpass)
+  (define notoldpass (symbol-append oldpass 'wrong))
+  (define (dispatch pass m)
+    (if (eq? pass newpass) (account oldpass m) (account notoldpass m)))
+  dispatch)
+
+; For testing/debugging
+; (define a (make-account 100 'pass))
+; (define w (a 'pass 'withdraw))
+
+; (define b (make-joint a 'pass 'newpass))
+; (define w2 (b 'newpass 'withdraw))
