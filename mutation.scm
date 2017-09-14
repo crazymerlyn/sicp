@@ -12,3 +12,16 @@
             1
             (+ 1 (count (cdr head) (cons head seen))))))
   (count x '()))
+
+(define (cycle? head)
+  (define (race tortoise hare)
+    (if (or (null? tortoise) (null? hare))
+        #f
+        (if (eq? tortoise hare)
+            #t
+            (if (null? (cdr hare))
+                #f
+                (cycle? (cdr tortoise) (cddr hare))))))
+  (if (or (null? head) (null? (cdr head)))
+      #f
+      (race (cdr head) (cddr head))))
