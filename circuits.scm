@@ -44,3 +44,31 @@
     (invert-input c output)
     'ok))
 
+; Delay = max(2 * and-gate-delay + inverter-delay, or-gate-delay + and-gate-delay)
+(define (half-adder a b s c)
+  (let ((d (make-wire)) (e (make-wire)))
+   (or-gate a b d)
+   (and-gate a b c)
+   (invert c e)
+   (and-gate d e s)
+   'ok))
+
+; Delay = half-adder-delay * 2 + or-gate-delay
+(define (full-adder a b c-in sum c-out)
+  (let ((s (make-wire))
+        (c1 (make-wire))
+        (c2 (make-wire)))
+    (half-adder b c-in s c1)
+    (half-adder a s sum c2)
+    (or-gate c1 c2 c-out)
+    'ok))
+
+; Delay = n * full-adder-delay where n is no. of wires in as/bs/sums
+(define (ripple-adder as bs sums c)
+  (cond ((and (null? as) (null? bs) (null? sums)) 'ok)
+        ((or (null? as) (null? bs) (null? sums))
+         (error "unequal no. of wires in ripple-adder" as bs sums))
+        (else
+          (let ((c1 (make-wire)))
+           (full-adder (car as) (car bs) c (car sums) c1)
+           (ripple-adder (cdr as) (cdr bs) (cdr sums) c1)))))
