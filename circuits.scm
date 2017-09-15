@@ -32,4 +32,15 @@
   (add-action! a2 or-action-procedure)
   'ok)
 
+; Compound or gate composed of invert gate and and gates
+; Delay = inverter-delay * 2 + and-gate-delay
+(define (or-gate-compound a1 a2 output)
+  (let ((i1 (make-wire))
+        (i2 (make-wire))
+        (c (make-wire)))
+    (invert-input a1 i1)
+    (invert-input a2 i2)
+    (and-gate i1 i2 c)
+    (invert-input c output)
+    'ok))
 
