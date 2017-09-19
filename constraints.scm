@@ -158,3 +158,10 @@
   (constraint 'forget-value))
 
 
+(define (averager a b c)
+  (let ((s (make-connector)) (two (make-connector)))
+   (adder a b s)
+   (constant 2 two)
+   (multiplier c 2 s)
+   c))
+
