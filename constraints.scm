@@ -40,7 +40,7 @@
                        me))
           ((and (has-value? m1) (has-value? product))
            (set-value! m2
-                       (/ (get-value sum) (get-value m1))
+                       (/ (get-value product) (get-value m1))
                        me))
           ((and (has-value? m2) (has-value? product))
            (set-value! m1
@@ -187,3 +187,28 @@
   (connect a me)
   (connect b me)
   me)
+
+(define (c+ x y)
+  (let ((z (make-connector)))
+   (adder x y z)
+   z))
+
+(define (c- x y)
+  (let ((z (make-connector)))
+   (adder y z x)
+   z))
+
+(define (c* x y)
+  (let ((z (make-connector)))
+   (multiplier x y z)
+   z))
+
+(define (c/ x y)
+  (let ((z (make-connector)))
+   (multiplier y z x)
+   z))
+
+(define (cv value)
+  (let ((c (make-connector)))
+   (constant value c)
+   c))
