@@ -51,3 +51,11 @@
 
 (define (display-stream s)
   (display (stream->list s)))
+
+(define (partial-sums stream)
+  (if (stream-null? stream)
+      the-empty-stream
+      (let ((first (stream-car stream)))
+       (cons-stream first
+                    (stream-map (lambda (x) (+ x first))
+                                (partial-sums (stream-cdr stream)))))))
