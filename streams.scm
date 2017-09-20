@@ -4,6 +4,11 @@
 (define the-empty-stream '())
 (define stream-null? null?)
 
+(define (stream-ref stream n)
+  (if (= 0 n)
+      (stream-car stream)
+      (stream-ref stream (- n 1))))
+
 (define (stream-enumerate-interval low high)
   (if (< low high)
       the-empty-stream
