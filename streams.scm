@@ -59,3 +59,26 @@
        (cons-stream first
                     (stream-map (lambda (x) (+ x first))
                                 (partial-sums (stream-cdr stream)))))))
+
+(define (merge s1 s2)
+  (cond ((stream-null? s1) s2)
+        ((stream-null? s2) s1)
+        (else
+          (let ((s1car (stream-car s1))
+                (s2car (stream-car s2)))
+            (cond ((< s1car s2car)
+                   (cons-stream s1car (merge (stream-cdr s1) s2)))
+                  ((> s1car s2car)
+                   (cons-stream s2car (merge s1 (stream-cdr s2))))
+                  (else
+                    (cons-stream s1car
+                                 (merge (stream-cdr s1)
+                                        (stream-cdr s2)))))))))
+
+(define (multiply n)
+  (lambda (x) (* x n)))
+
+(define S (cons-stream 1 (merge (stream-map (multiply 2) S)
+                                (merge (stream-map (multiply 3) S)
+                                       (stream-map (multiply 5) S)))))
+
