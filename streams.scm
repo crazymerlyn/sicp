@@ -104,3 +104,15 @@
   (define x (cons-stream 1 (stream-map - (mul-series (stream-cdr s) x))))
   x)
 
+(define (scale-series n series)
+  (stream-map (lambda (x) (* x n)) series))
+
+(define (div-series s1 s2)
+  (cond ((stream-null? s2) (error "Invalid stream"))
+        ((= 0 (stream-car s2))
+         (error "Can't divide by stream if constant term is 0"))
+        (else
+          (let ((scale (/ (stream-car s2))))
+           (mul-series (scale-series scale s1)
+                       (invert-unit-series (scale-series scale s2)))))))
+
