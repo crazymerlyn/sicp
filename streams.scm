@@ -43,3 +43,11 @@
 
 (define factorials (cons-stream 1 (mul-streams (stream-cdr integers) factorials)))
 
+(define (stream-take n s)
+  (if (= n 0)
+      the-empty-stream
+      (cons-stream (stream-car s)
+                   (stream-take (- n 1) (stream-cdr s)))))
+
+(define (display-stream s)
+  (display (stream->list s)))
