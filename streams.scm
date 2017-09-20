@@ -82,3 +82,15 @@
                                 (merge (stream-map (multiply 3) S)
                                        (stream-map (multiply 5) S)))))
 
+
+(define (integrate-series series)
+  (stream-map / series integers))
+
+(define exp-series (cons-stream 1 (integrate-series exp-series)))
+
+(define cosine-series
+  (cons-stream 1 (stream-map - (integrate-series sine-series))))
+
+(define sine-series
+  (cons-stream 0 (integrate-series cosine-series)))
+
