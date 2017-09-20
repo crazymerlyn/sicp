@@ -32,4 +32,14 @@
         (apply stream-map
                (cons proc (map stream-cdr argstreams))))))
 
+(define (add-streams s1 s2)
+  (stream-map + s1 s2))
+
+(define (mul-streams s1 s2)
+  (stream-map * s1 s2))
+
+(define (integers-from n) (cons-stream n (integers-from (+ n 1))))
+(define integers (integers-from 1))
+
+(define factorials (cons-stream 1 (mul-streams (stream-cdr integers) factorials)))
 
