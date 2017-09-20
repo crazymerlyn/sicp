@@ -100,3 +100,7 @@
                                         (stream-cdr s2))
                             (mul-series (stream-cdr s1) s2))))
 
+(define (invert-unit-series s)
+  (define x (cons-stream 1 (stream-map - (mul-series (stream-cdr s) x))))
+  x)
+
