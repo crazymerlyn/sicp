@@ -229,3 +229,29 @@
 
 (define ordbysum (weighted-pairs integers integers (lambda (x) (apply + x))))
 
+(define (cube x) (* x x x))
+(define (sumcube x) (+ (cube (car x)) (cube (cadr x))))
+(define ordbysumcube (weighted-pairs integers integers sumcube))
+
+(define (is-ramanujam-number? n)
+  (define (loop n stream)
+    (let ((a (stream-ref stream 0))
+          (b (stream-ref stream 1)))
+      (cond ((> (sumcube a) n) #f)
+            ((< (sumcube a) n) (loop n (stream-cdr stream)))
+            ((= (sumcube a) (sumcube b)) #t)
+            (else
+              (loop n (stream-cdr stream))))))
+  (loop n ordbysumcube))
+
+(define (uniq s)
+  (let ((a (stream-ref s 0))
+        (b (stream-ref s 1)))
+    (if (= a b)
+        (uniq (stream-cdr s))
+        (cons-stream a (uniq (stream-cdr s))))))
+
+(define ramanujam-possibs (uniq (stream-map sumcube ordbysumcube)))
+
+(define ramanujam-numbers (stream-filter is-ramanujam-number? ramanujam-possibs))
+
