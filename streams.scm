@@ -283,3 +283,13 @@
       (scale-series R current)))
   voltage)
 
+(define (sign-change-detector a b)
+  (if (= 0 (* a b))
+      (if (>= (+ a b) 0) 0 1)
+      (if (> (* a b) 0) 0 1)))
+
+(define sense-data (cons-stream 1 (scale-series -1 sense-data)))
+
+(define zero-crossings
+  (stream-map sign-change-detector sense-data (cons-stream 0 sense-data)))
+
