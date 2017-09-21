@@ -116,3 +116,24 @@
            (mul-series (scale-series scale s1)
                        (invert-unit-series (scale-series scale s2)))))))
 
+(define (stream-limit stream tolerance)
+  (if (or (stream-null? stream)
+          (stream-null? (stream-cdr stream)))
+      (error "Empty stream to stream-limit")
+      (let ((first (stream-car stream))
+            (second (stream-car (stream-cdr stream))))
+        (if (< (abs (- first second)) tolerance)
+            second
+            (stream-limit (stream-cdr stream) tolerance)))))
+
+(define (sqrt-improve guess x)
+  (/ (+ guess (/ x guess)) 2))
+
+(define (sqrt-stream x)
+  (define guesses
+    (cons-stream 1.0
+                 (stream-map (lambda (guess)
+                               (sqrt-improve guess x))
+                             guesses)))
+  guesses)
+
