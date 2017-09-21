@@ -293,3 +293,12 @@
 (define zero-crossings
   (stream-map sign-change-detector sense-data (cons-stream 0 sense-data)))
 
+(define (make-zero-crossings input-stream last-value last-avg)
+  (let ((avpt (/ (+ (stream-car input-stream) last-value) 2)))
+   (cons-stream (sign-change-detector avpt last-avg)
+                (make-zero-crossings (stream-cdr input-stream)
+                                     (stream-car input-stream)
+                                     avpt))))
+(define zero-crossings2
+  (make-zero-crossings sense-data 0 0))
+
