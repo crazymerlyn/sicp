@@ -255,3 +255,16 @@
 
 (define ramanujam-numbers (stream-filter is-ramanujam-number? ramanujam-possibs))
 
+(define (sumsq x) (+ (square (car x)) (square (cadr x))))
+(define ordbysumsq (weighted-pairs integers integers sumsq))
+(define (filter3sumsq stream)
+  (let ((a (stream-ref stream 0))
+        (b (stream-ref stream 1))
+        (c (stream-ref stream 2))
+        (rest (stream-cdr (stream-cdr (stream-cdr stream)))))
+    (if (= (sumsq a) (sumsq b) (sumsq c))
+        (cons-stream (list (sumsq a) (list a b c))
+                     (filter3sumsq rest))
+        (filter3sumsq (stream-cdr stream)))))
+(define can-be-written-3-ways (filter3sumsq ordbysumsq))
+
