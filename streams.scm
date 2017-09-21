@@ -293,6 +293,12 @@
 (define zero-crossings
   (stream-map sign-change-detector sense-data (cons-stream 0 sense-data)))
 
+(define (smooth stream)
+  (let ((a (stream-ref stream 0))
+        (b (stream-ref stream 1)))
+    (cons-stream (/ (+ a b) 2)
+                 (smooth (stream-cdr stream)))))
+
 (define (make-zero-crossings input-stream last-value last-avg)
   (let ((avpt (/ (+ (stream-car input-stream) last-value) 2)))
    (cons-stream (sign-change-detector avpt last-avg)
@@ -301,4 +307,11 @@
                                      avpt))))
 (define zero-crossings2
   (make-zero-crossings sense-data 0 0))
+
+(define (make-zero-crossings2 input-stream initial-value)
+  (let ((smoothed (smooth input-stream)))
+   (stream-map sign-change-detector smoothed (cons-stream initial-value smoothed))))
+
+(define zero-crossings3
+  (make-zero-crossings2 sense-data 0))
 
