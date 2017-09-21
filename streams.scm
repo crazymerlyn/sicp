@@ -7,7 +7,7 @@
 (define (stream-ref stream n)
   (if (= 0 n)
       (stream-car stream)
-      (stream-ref stream (- n 1))))
+      (stream-ref (stream-cdr stream) (- n 1))))
 
 (define (stream-enumerate-interval low high)
   (if (< low high)
@@ -136,4 +136,19 @@
                                (sqrt-improve guess x))
                              guesses)))
   guesses)
+
+(define (ln2-summands n)
+  (cons-stream (/ 1.0 n)
+               (stream-map - (ln2-summands (+ n 1)))))
+
+(define ln2-series
+  (partial-sums (ln2-summands 1)))
+
+(define (euler-transform s)
+  (let ((s0 (stream-ref s 0))
+        (s1 (stream-ref s 1))
+        (s2 (stream-ref s 2)))
+    (cons-stream (- s2 (/ (square (- s2 s1))
+                          (+ s0 (* -2 s1) s2)))
+                 (euler-transform (stream-cdr s)))))
 
