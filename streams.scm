@@ -268,3 +268,18 @@
         (filter3sumsq (stream-cdr stream)))))
 (define can-be-written-3-ways (filter3sumsq ordbysumsq))
 
+
+(define (integral integrand initial-value dt)
+  (define int
+    (cons-stream initial-value
+                 (add-streams (scale-series dt integrand)
+                              int)))
+  int)
+
+(define (RC R C dt)
+  (define (voltage current initial-voltage)
+    (add-streams
+      (integral (scale-series (/ C) current) initial-value dt)
+      (scale-series R current)))
+  voltage)
+
