@@ -175,3 +175,24 @@
                   (stream-cdr s2))
       (all-pairs (stream-cdr s1) s2))))
 
+(define (triples s t u)
+  (cons-stream (list (stream-car s)
+                     (stream-car t)
+                     (stream-car u))
+               (interleave
+                 (stream-map (lambda (x) (cons (stream-car s) x))
+                             (stream-cdr (pairs t u)))
+                 (triples (stream-cdr s)
+                          (stream-cdr t)
+                          (stream-cdr u)))))
+
+
+(define (is-pythagorean? x)
+  (let ((i (car x))
+        (j (cadr x))
+        (k (caddr x)))
+    (= (square k) (+ (square i) (square j)))))
+
+(define pythagorean-triples
+  (stream-filter is-pythagorean? (triples integers integers integers)))
+
