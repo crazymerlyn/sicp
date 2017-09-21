@@ -196,3 +196,36 @@
 (define pythagorean-triples
   (stream-filter is-pythagorean? (triples integers integers integers)))
 
+(define (merge-weighted s1 s2 weight)
+  (cond ((stream-null? s1) s2)
+        ((stream-null? s2) s1)
+        (else
+          (let* ((s1car (stream-car s1))
+                 (s2car (stream-car s2))
+                 (s1w (weight s1car))
+                 (s2w (weight s2car)))
+            (cond ((< s1w s2w)
+                   (cons-stream s1car 
+                                (merge-weighted (stream-cdr s1) s2 weight)))
+                  ((> s1w s2w)
+                   (cons-stream s2car 
+                                (merge-weighted s1 (stream-cdr s2) weight)))
+                  (else
+                    (cons-stream s1car
+                                 (cons-stream s2car
+                                              (merge-weighted (stream-cdr s1) 
+                                                              (stream-cdr s2)
+                                                              weight)))))))))
+
+
+(define (weighted-pairs s1 s2 weight)
+  (cons-stream
+    (list (stream-car s1) (stream-car s2))
+    (merge-weighted
+      (stream-map (lambda (x) (list (stream-car s1) x))
+                  (stream-cdr s2))
+      (weighted-pairs (stream-cdr s1) (stream-cdr s2) weight)
+      weight)))
+
+(define ordbysum (weighted-pairs integers integers (lambda (x) (apply + x))))
+
