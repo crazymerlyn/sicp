@@ -64,3 +64,20 @@
                     env)
   'ok)
 
+(define (list-of-values-l2r exps env)
+  (if (no-operands? exps)
+      '()
+      (begin
+        (define left (eval (first-operand exp) env))
+        (define right (list-of-values-l2r (rest-operands exp) env))
+        (cons left right))))
+
+
+(define (list-of-values-r2l exps env)
+  (if (no-operands? exps)
+      '()
+      (begin
+        (define right (list-of-values-r2l (rest-operands exp) env))
+        (define left (eval (first-operand exp) env))
+        (cons left right))))
+
