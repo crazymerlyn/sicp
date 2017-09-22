@@ -315,13 +315,21 @@
 (define zero-crossings3
   (make-zero-crossings2 sense-data 0))
 
-(define (integral delayed-integrand initial-value dt)
+(define (integral2 delayed-integrand initial-value dt)
   (cons-stream initial-value
-               (let ((integrand (delayed-integrand)))
+               (let ((integrand (force delayed-integrand)))
                 (if (stream-null? integrand)
                     the-empty-stream
-                    (integral (stream-cdr integrand)
+                    (integral2 (delay (stream-cdr integrand))
                               (+ (* dt (stream-car integrand))
                                  initial-value)
                               dt)))))
+
+(define (solve-2nd a b dt y0 dy0)
+  (define y (integral2 (delay dy) y0 dt))
+  (define dy (integral2 (delay ddy) dy0 dt))
+  (define ddy (add-streams
+                (scale-series a dy)
+                (scale-series b y)))
+  y)
 
