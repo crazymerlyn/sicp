@@ -331,3 +331,13 @@
   (define ddy (stream-map f dy y))
   y)
 
+(define (RLC R L C dt)
+  (lambda (iL0 vC0)
+    (define iL (integral2 (delay diL) iL0 dt))
+    (define vC (integral2 (delay dvC) vC0 dt))
+    (define diL
+      (add-streams (scale-series (/ (- R) L) iL)
+                   (scale-series (/ L) vC)))
+    (define dvC (scale-series (/ -1 C) iL))
+    (stream-map cons vC iL)))
+
