@@ -360,3 +360,29 @@
                        (generate (next seed) (stream-cdr requests))))))
   (generate (random 100) requests))
 
+
+(define (random-in-range low high)
+  (let ((range (- high low)))
+   (+ low (random range))))
+
+(define (monte-carlo experiment-stream passed failed)
+  (define (next passed failed)
+    (cons-stream
+      (/ passed (+ passed failed))
+      (monte-carlo (stream-cdr experiment-stream) passed failed)))
+  (if (stream-car experiment-stream)
+      (next (+ passed 1) failed)
+      (next passed (+ failed 1))))
+
+(define (inside-rect x1 x2 y1 y2 P)
+  (lambda ()
+    (let ((x (random-in-range x1 x2))
+          (y (random-in-range y1 y2)))
+      (P x y))))
+
+(define (experiment-stream experiment)
+  (cons-stream (experiment)
+               (experiment-stream experiment)))
+
+(define (estimate-integral P x1 x2 y1 y2)
+  (monte-carlo (experiment-stream (inside-rect x1 x2 y1 y2 P)) 0 0))
