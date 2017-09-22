@@ -341,3 +341,22 @@
     (define dvC (scale-series (/ -1 C) iL))
     (stream-map cons vC iL)))
 
+(define (random-stream requests)
+  (define (next seed)
+    (let ((a 1103515245)
+          (b 12345)
+          (m 4294967296))
+      (remainder (+ (* seed a) b) m)))
+  (define (generate seed requests)
+    (if (stream-null? requests)
+        the-empty-stream
+        (let ((seed
+                (cond ((eq? (stream-car requests) 'generate) seed)
+                      ((and (pair? (stream-car requests))
+                            (eq? (car (stream-car requests)) 'reset))
+                       (* 65536 (cadr (stream-car requests))))
+                      (else (error "invalid request to random generator" (stream-car requests))))))
+          (cons-stream (remainder (quotient seed 65536) 32768)
+                       (generate (next seed) (stream-cdr requests))))))
+  (generate (random 100) requests))
+
