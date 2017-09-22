@@ -325,11 +325,9 @@
                                  initial-value)
                               dt)))))
 
-(define (solve-2nd a b dt y0 dy0)
+(define (solve-2nd a b dt y0 dy0 f)
   (define y (integral2 (delay dy) y0 dt))
   (define dy (integral2 (delay ddy) dy0 dt))
-  (define ddy (add-streams
-                (scale-series a dy)
-                (scale-series b y)))
+  (define ddy (stream-map f dy y))
   y)
 
