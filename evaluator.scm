@@ -188,3 +188,8 @@
                      (sequence->exp (cond-actions first))
                      (expand-clauses rest))))))
 
+
+(define (application-louis? exp) (tagged-list? exp 'call))
+(define (operator-louis exp) (cadr exp))
+(define (operands-louis exp) (cddr exp))
+
