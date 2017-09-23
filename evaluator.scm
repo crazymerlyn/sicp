@@ -203,9 +203,18 @@
                 (sequence->exp (cond-actions first))
                 (error "ELSE clause isn't last -- COND->IF" clauses))
             (make-if (cond-predicate first)
-                     (sequence->exp (cond-actions first))
+                     (clause->exp first)
                      (expand-clauses rest))))))
 
+(define (clause->exp clause)
+  (cond ((null? clause) (error "Ill formed clause -- CLAUSE->EXP" clause))
+        ((null? (cdr clause)) (car clause))
+        ((eq? (cadr clause) '=>)
+         (if (= (length clause) 3)
+             ((caddr clause) (car clause))
+             (error "Ill formed clause -- CLAUSE->EXP" clause)))
+        (else
+          (sequence->exp (cond-actions clause)))))
 
 (define (application-louis? exp) (tagged-list? exp 'call))
 (define (operator-louis exp) (cadr exp))
