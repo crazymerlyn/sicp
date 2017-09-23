@@ -216,6 +216,15 @@
         (else
           (sequence->exp (cond-actions clause)))))
 
+
+(define (let->combination exp)
+  (cons (make-lambda (let-parameters exp) (let-body exp))
+        (let-values exp)))
+(define (let-body exp) (cddr exp))
+(define (let-parameters exp) (map car (cadr exp)))
+(define (let-values exp) (map cadr (cadr exp)))
+
+
 (define (application-louis? exp) (tagged-list? exp 'call))
 (define (operator-louis exp) (cadr exp))
 (define (operands-louis exp) (cddr exp))
@@ -232,6 +241,7 @@
                     (make-procedure (lambda-params exp)
                                     (lambda-body exp)
                                     env)))
+    (cons 'let (lambda (exp env) (eval (let->combination exp) env)))
     (cons 'begin (lambda (exp env) (eval-sequence (begin-actions exp) env)))
     (cons 'cond (lambda (exp env) (evaln (cond->if exp) env)))))
 
