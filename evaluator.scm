@@ -26,8 +26,8 @@
 (define (list-of-values exps env)
   (if (no-operands? exps)
       '()
-      (cons (evaln (first-operand exp) env)
-            (list-of-values (rest-operands exp) env))))
+      (cons (evaln (first-operand exps) env)
+            (list-of-values (rest-operands exps) env))))
 
 
 (define (eval-if exp env)
@@ -352,11 +352,16 @@
 
 (define (primitive-implementation proc) (cadr proc))
 
-(define (primitive-procedures)
+(define primitive-procedures
   (list (list 'car car)
         (list 'cdr cdr)
         (list 'cons cons)
-        (list 'null? null?)))
+        (list 'null? null?)
+        (list 'list list)
+        (list '+ +)
+        (list '- -)
+        (list '* *)
+        (list '/ /)))
 
 (define (primitive-procedure-names)
   (map car primitive-procedures))
@@ -378,4 +383,29 @@
     initial-env))
 
 (define the-global-environment (setup-environment))
+
+
+(define input-prompt ";;; M-eval input:")
+(define output-prompt  ";;; M-eval value:")
+(define (driver-loop)
+  (prompt-for-input input-prompt)
+  (let ((input (read)))
+   (let ((output (evaln input the-global-environment)))
+    (announce-output output-prompt)
+    (user-print output)))
+  (driver-loop))
+
+(define (prompt-for-input input-prompt)
+  (newline) (newline) (display input-prompt) (newline))
+
+(define (announce-output output-prompt)
+  (newline) (display output-prompt) (newline))
+
+(define (user-print object)
+  (if (compound-procedure? object)
+      (display (list 'compound-procedure
+                     (procedure-parameters object)
+                     (procedure-body object)
+                     '<procedure-env>))
+      (display object)))
 
