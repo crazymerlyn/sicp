@@ -67,18 +67,16 @@
 (define (list-of-values-l2r exps env)
   (if (no-operands? exps)
       '()
-      (begin
-        (define left (eval (first-operand exp) env))
-        (define right (list-of-values-l2r (rest-operands exp) env))
+      (let* ((left (eval (first-operand exp) env))
+             (right (list-of-values-l2r (rest-operands exp) env)))
         (cons left right))))
 
 
 (define (list-of-values-r2l exps env)
   (if (no-operands? exps)
       '()
-      (begin
-        (define right (list-of-values-r2l (rest-operands exp) env))
-        (define left (eval (first-operand exp) env))
+      (let* ((right (list-of-values-r2l (rest-operands exp) env))
+             (left (eval (first-operand exp) env)))
         (cons left right))))
 
 
@@ -192,4 +190,29 @@
 (define (application-louis? exp) (tagged-list? exp 'call))
 (define (operator-louis exp) (cadr exp))
 (define (operands-louis exp) (cddr exp))
+
+
+(define eval-data-rules
+  (list
+    (cons 'quote (lambda (exp env) (text-of-quotation env)))
+    (cons 'set! eval-assignment)
+    (cons 'define eval-definition)
+    (cons 'if eval-if)
+    (cons 'lambda (lambda (exp env)
+                    (make-procedure (lambda-params exp)
+                                    (lambda-body exp)
+                                    env)))
+    (cons 'begin (lambda (exp env) (eval-sequence (begin-actions exp) env)))
+    (cons 'cond (lambda (exp env) (eval (cond->if exp) env)))))
+
+(define (eval-data exp env)
+  (cond ((self-evaluating? exp) exp)
+        ((variable? exp) (lookup-variable-value exp env))
+        ((assoc (car exp) eval-data-rules)
+         ((cdr (assoc (car exp) eval-data-rules)) exp env))
+        ((application? exp)
+         (apply (eval-data (operator exp) env)
+                (list-of-values (operands exp) env)))
+        (else
+          (error "Unknown expression type -- EVAL" exp))))
 
