@@ -218,11 +218,26 @@
 
 
 (define (let->combination exp)
-  (cons (make-lambda (let-parameters exp) (let-body exp))
-        (let-values exp)))
+  (cond ((named-let? exp)
+         (sequence->exp
+           (list
+             (cons 'define
+                   (cons (cons (named-let-name exp)
+                               (named-let-parameters exp))
+                         (named-let-body exp)))
+             (cons (named-let-name exp)
+                   (named-let-values exp)))))
+        (else
+          (cons (make-lambda (let-parameters exp) (let-body exp))
+                (let-values exp)))))
 (define (let-body exp) (cddr exp))
 (define (let-parameters exp) (map car (cadr exp)))
 (define (let-values exp) (map cadr (cadr exp)))
+(define (named-let? exp) (symbol? (cadr exp)))
+(define (named-let-body exp) (cdddr exp))
+(define (named-let-parameters exp) (map car (caddr exp)))
+(define (named-let-values exp) (map cadr (caddr exp)))
+(define (named-let-name exp) (cadr exp))
 
 (define (make-let parameters body)
   (cons 'let (cons parameters body)))
