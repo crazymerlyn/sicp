@@ -1,28 +1,15 @@
-(define eval-data-rules
-  (list
-    (cons 'quote (lambda (exp env) (text-of-quotation env)))
-    (cons 'set! eval-assignment)
-    (cons 'define eval-definition)
-    (cons 'if eval-if)
-    (cons 'lambda (lambda (exp env)
-                    (make-procedure (lambda-params exp)
-                                    (lambda-body exp)
-                                    env)))
-    (cons 'begin (lambda (exp env) (eval-sequence (begin-actions exp) env)))
-    (cons 'cond (lambda (exp env) (eval (cond->if exp) env)))))
-
-(define (eval exp env)
+(define (evaln exp env)
   (cond ((self-evaluating? exp) exp)
         ((variable? exp) (lookup-variable-value exp env))
         ((assoc (car exp) eval-data-rules)
          ((cdr (assoc (car exp) eval-data-rules)) exp env))
         ((application? exp)
-         (apply (eval (operator exp) env)
+         (applyn (evaln (operator exp) env)
                 (list-of-values (operands exp) env)))
         (else
           (error "Unknown expression type -- EVAL" exp))))
 
-(define (apply procedure arguments)
+(define (applyn procedure arguments)
   (cond ((primitive-procedure? procedure)
          (apply-primitive-procedure procedure arguments))
         ((compound-procedure? procedure)
@@ -39,39 +26,68 @@
 (define (list-of-values exps env)
   (if (no-operands? exps)
       '()
-      (cons (eval (first-operand exp) env)
+      (cons (evaln (first-operand exp) env)
             (list-of-values (rest-operands exp) env))))
 
 
 (define (eval-if exp env)
-  (if (true? (eval (if-predicate exp) env))
-      (eval (if-consequent exp) env)
-      (eval (if-alternative exp) env)))
+  (if (true? (evaln (if-predicate exp) env))
+      (evaln (if-consequent exp) env)
+      (evaln (if-alternative exp) env)))
+
+
+(define (eval-and exp env)
+  (evaln (expand-and (and-clauses exp)) env))
+
+(define (and-clauses exp) (cdr exp))
+
+(define (expand-and exps)
+  (if (null? exps)
+      'true
+      (if (last-exp? exps)
+          (first-exp exps)
+          (make-if (first-exp exps)
+                   (expand-and (rest-exps exps))
+                   (first-exp exps)))))
+
+(define (eval-or exp env)
+  (evaln (expand-or (or-clauses exp)) env))
+
+(define (or-clauses exp) (cdr exp))
+
+(define (expand-or exps)
+  (if (null? exps)
+      'false
+      (if (last-exp? exps)
+          (first-exp exps)
+          (make-if (first-exp exps)
+                   (first-exp exps)
+                   (expand-or (rest-exps exps))))))
 
 
 (define (eval-sequence exps env)
-  (cond ((last-exp? exps) (eval (first-exp exps) env))
-        (else (eval (first-exp exps) env)
+  (cond ((last-exp? exps) (evaln (first-exp exps) env))
+        (else (evaln (first-exp exps) env)
               (eval-sequence (rest-exps exps) env))))
 
 
 (define (eval-assignment exp env)
   (set-variable-value! (assignment-variable exp)
-                       (eval (assignment-value exp) env)
+                       (evaln (assignment-value exp) env)
                        env)
   'ok)
 
 
 (define (eval-definition exp env)
   (define-variable! (definition-variable exp)
-                    (eval (definition-value exp) env)
+                    (evaln (definition-value exp) env)
                     env)
   'ok)
 
 (define (list-of-values-l2r exps env)
   (if (no-operands? exps)
       '()
-      (let* ((left (eval (first-operand exp) env))
+      (let* ((left (evaln (first-operand exp) env))
              (right (list-of-values-l2r (rest-operands exp) env)))
         (cons left right))))
 
@@ -80,7 +96,7 @@
   (if (no-operands? exps)
       '()
       (let* ((right (list-of-values-r2l (rest-operands exp) env))
-             (left (eval (first-operand exp) env)))
+             (left (evaln (first-operand exp) env)))
         (cons left right))))
 
 
@@ -194,3 +210,19 @@
 (define (application-louis? exp) (tagged-list? exp 'call))
 (define (operator-louis exp) (cadr exp))
 (define (operands-louis exp) (cddr exp))
+
+(define eval-data-rules
+  (list
+    (cons 'quote (lambda (exp env) (text-of-quotation env)))
+    (cons 'set! eval-assignment)
+    (cons 'define eval-definition)
+    (cons 'if eval-if)
+    (cons 'and eval-and)
+    (cons 'or eval-or)
+    (cons 'lambda (lambda (exp env)
+                    (make-procedure (lambda-params exp)
+                                    (lambda-body exp)
+                                    env)))
+    (cons 'begin (lambda (exp env) (eval-sequence (begin-actions exp) env)))
+    (cons 'cond (lambda (exp env) (evaln (cond->if exp) env)))))
+
