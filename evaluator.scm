@@ -1,17 +1,21 @@
+(define eval-data-rules
+  (list
+    (cons 'quote (lambda (exp env) (text-of-quotation env)))
+    (cons 'set! eval-assignment)
+    (cons 'define eval-definition)
+    (cons 'if eval-if)
+    (cons 'lambda (lambda (exp env)
+                    (make-procedure (lambda-params exp)
+                                    (lambda-body exp)
+                                    env)))
+    (cons 'begin (lambda (exp env) (eval-sequence (begin-actions exp) env)))
+    (cons 'cond (lambda (exp env) (eval (cond->if exp) env)))))
+
 (define (eval exp env)
   (cond ((self-evaluating? exp) exp)
         ((variable? exp) (lookup-variable-value exp env))
-        ((quoted? exp) (text-of-quotation exp))
-        ((assignment? exp) (eval-assignment exp env))
-        ((definition? exp) (eval-definition exp env))
-        ((if? exp) (eval-if exp env))
-        ((lambda? exp)
-         (make-procedure (lambda-params exp)
-                         (lambda-body exp)
-                         env))
-        ((begin? exp)
-         (eval-sequence (begin-actions exp) env))
-        ((cond? exp) (eval (cond->if exp) env))
+        ((assoc (car exp) eval-data-rules)
+         ((cdr (assoc (car exp) eval-data-rules)) exp env))
         ((application? exp)
          (apply (eval (operator exp) env)
                 (list-of-values (operands exp) env)))
@@ -190,29 +194,3 @@
 (define (application-louis? exp) (tagged-list? exp 'call))
 (define (operator-louis exp) (cadr exp))
 (define (operands-louis exp) (cddr exp))
-
-
-(define eval-data-rules
-  (list
-    (cons 'quote (lambda (exp env) (text-of-quotation env)))
-    (cons 'set! eval-assignment)
-    (cons 'define eval-definition)
-    (cons 'if eval-if)
-    (cons 'lambda (lambda (exp env)
-                    (make-procedure (lambda-params exp)
-                                    (lambda-body exp)
-                                    env)))
-    (cons 'begin (lambda (exp env) (eval-sequence (begin-actions exp) env)))
-    (cons 'cond (lambda (exp env) (eval (cond->if exp) env)))))
-
-(define (eval-data exp env)
-  (cond ((self-evaluating? exp) exp)
-        ((variable? exp) (lookup-variable-value exp env))
-        ((assoc (car exp) eval-data-rules)
-         ((cdr (assoc (car exp) eval-data-rules)) exp env))
-        ((application? exp)
-         (apply (eval-data (operator exp) env)
-                (list-of-values (operands exp) env)))
-        (else
-          (error "Unknown expression type -- EVAL" exp))))
-
