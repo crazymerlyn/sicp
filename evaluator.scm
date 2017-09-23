@@ -224,6 +224,16 @@
 (define (let-parameters exp) (map car (cadr exp)))
 (define (let-values exp) (map cadr (cadr exp)))
 
+(define (make-let parameters body)
+  (cons 'let (cons parameters body)))
+
+(define (let*-nested-lets exp)
+  (if (null? (cdadr exp))
+      (make-let (cadr exp) (cddr exp))
+      (make-let (list (caadr exp))
+                (list (let*-nested-lets
+                        (cons 'let* (cons (cdadr exp) (cddr exp))))))))
+
 
 (define (application-louis? exp) (tagged-list? exp 'call))
 (define (operator-louis exp) (cadr exp))
@@ -241,7 +251,8 @@
                     (make-procedure (lambda-params exp)
                                     (lambda-body exp)
                                     env)))
-    (cons 'let (lambda (exp env) (eval (let->combination exp) env)))
+    (cons 'let (lambda (exp env) (evaln (let->combination exp) env)))
+    (cons 'let* (lambda (exp env) (evaln (let*-nested-lets exp) env)))
     (cons 'begin (lambda (exp env) (eval-sequence (begin-actions exp) env)))
     (cons 'cond (lambda (exp env) (evaln (cond->if exp) env)))))
 
