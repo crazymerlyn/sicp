@@ -90,8 +90,8 @@
   (let ((var (assignment-variable exp))
         (vproc (analyze (assignment-value exp))))
     (lambda (env)
-      (set-variable-value! var (vproc env) env)))
-  'ok)
+      (set-variable-value! var (vproc env) env)
+      'ok)))
 
 (define (analyze-definition exp)
   (let ((var (definition-variable exp))
@@ -460,7 +460,7 @@
            (set-car! (cdr obj) result)
            (set-cdr! (cdr obj) '())
            result))
-        ((evaluated-thunk? obj) (thunk-value ob))
+        ((evaluated-thunk? obj) (thunk-value obj))
         (else obj)))
 
 (define (delay-it proc env)
