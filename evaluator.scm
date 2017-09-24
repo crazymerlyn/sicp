@@ -117,7 +117,7 @@
         ((compound-procedure? proc)
          ((procedure-body proc)
           (extend-environment (procedure-parameters proc)
-                              (map (lambda (proc) (delay-it proc env)) args)
+                              (procedure-evaluate-args proc args env)
                               (procedure-environment proc))))
         (else
           (error "Unknown procedure type -- EXECUTE-APPLICATION" proc))))
@@ -324,7 +324,23 @@
 (define (compound-procedure? p)
   (tagged-list? p 'procedure))
 
-(define (procedure-parameters p) (cadr p))
+(define (procedure-parameters p)
+  (map parameter-name (cadr p)))
+(define (parameter-name param)
+  (if (symbol? param) param (car param)))
+(define (parameter-category param)
+  (cond ((symbol? param) 'strict)
+        (else (cadr param))))
+
+(define (procedure-evaluate-args proc aprocs env)
+  (define (make-arg category aproc)
+    (cond ((eq? category 'strict) (actual-value aproc env))
+          ((eq? category 'lazy) (delay-it aproc env #f))
+          ((eq? category 'lazy-memo) (delay-it aproc env #t))
+          (else
+            (error "Unknown category of argument -- PROCEDURE-EVALUATE-ARGS" category))))
+  (map make-arg (map parameter-category (cadr proc)) aprocs))
+
 (define (procedure-body p) (caddr p))
 (define (procedure-environment p) (cadddr p))
 
@@ -456,18 +472,25 @@
          (let ((result (actual-value 
                          (thunk-proc obj)
                          (thunk-env obj))))
-           (set-car! obj 'evaluated-thunk)
-           (set-car! (cdr obj) result)
-           (set-cdr! (cdr obj) '())
+           (if (memoized-thunk? obj)
+               (begin (set-car! obj 'evaluated-thunk)
+                      (set-car! (cdr obj) result)
+                      (set-cdr! (cdr obj) '())))
            result))
         ((evaluated-thunk? obj) (thunk-value obj))
         (else obj)))
 
-(define (delay-it proc env)
-  (list 'thunk proc env))
+(define (delay-it proc env memoize)
+  (if (true? memoize)
+      (list 'thunk-memoize proc env)
+      (list 'thunk proc env)))
 
 (define (thunk? obj)
-  (tagged-list? obj 'thunk))
+  (or (tagged-list? obj 'thunk)
+      (tagged-list? obj 'thunk-memoize)))
+
+(define (memoized-thunk? obj)
+  (tagged-list? obj 'thunk-memoize))
 
 (define (thunk-proc thunk) (cadr thunk))
 (define (thunk-env thunk) (caddr thunk))
