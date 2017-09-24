@@ -24,6 +24,8 @@
 (define (analyze-quoted exp)
   (let ((qval (text-of-quotation exp)))
    (lambda (env) qval)))
+(define (text-of-quotation exp)
+  (cadr exp))
 
 (define (analyze-variable exp)
   (lambda (env) (lookup-variable-value exp env)))
