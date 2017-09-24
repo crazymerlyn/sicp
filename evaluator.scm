@@ -33,7 +33,7 @@
         (cproc (analyze (if-consequent exp)))
         (aproc (analyze (if-alternative exp))))
     (lambda (env)
-      (if (true? (pproc env))
+      (if (true? (actual-value pproc env))
           (cproc env)
           (aproc env)))))
 
@@ -97,27 +97,33 @@
   (let ((var (definition-variable exp))
         (vproc (analyze (definition-value exp))))
     (lambda (env)
-      (define-variable! var (vproc env) env)))
-  'ok)
+      (define-variable! var (vproc env) env)
+      'ok)))
 
 
 (define (analyze-application exp)
   (let ((fproc (analyze (operator exp)))
         (aprocs (map analyze (operands exp))))
     (lambda (env)
-      (execute-application (fproc env)
-                           (map (lambda (aproc) (aproc env))
-                                aprocs)))))
-(define (execute-application proc args)
+      (execute-application (actual-value fproc env)
+                           aprocs
+                           env))))
+
+(define (execute-application proc args env)
   (cond ((primitive-procedure? proc)
-         (apply-primitive-procedure proc args))
+         (apply-primitive-procedure
+           proc
+           (map (lambda (proc) (actual-value proc env)) args)))
         ((compound-procedure? proc)
          ((procedure-body proc)
           (extend-environment (procedure-parameters proc)
-                              args
+                              (map (lambda (proc) (delay-it proc env)) args)
                               (procedure-environment proc))))
         (else
           (error "Unknown procedure type -- EXECUTE-APPLICATION" proc))))
+
+(define (actual-value proc env)
+  (force-it (proc env)))
 
 
 (define (list-of-values-l2r exps env)
@@ -190,7 +196,7 @@
 (define (if-predicate exp) (cadr exp))
 (define (if-consequent exp) (caddr exp))
 (define (if-alternative exp)
-  (if (not (null? cdddr exp))
+  (if (not (null? (cdddr exp)))
       (cadddr exp)
       'false))
 
@@ -302,7 +308,7 @@
     (cons 'let (lambda (exp) (analyze (let->combination exp))))
     (cons 'let* (lambda (exp) (analyze (let*-nested-lets exp))))
     (cons 'begin (lambda (exp) (analyze-sequence (begin-actions exp))))
-    (cons 'cond (lambda (exp env) (evaln (cond->if exp) env)))))
+    (cons 'cond (lambda (exp) (analyze (cond->if exp))))))
 
 
 (define (true? x)
@@ -394,7 +400,10 @@
         (list '+ +)
         (list '- -)
         (list '* *)
-        (list '/ /)))
+        (list '/ /)
+        (list '= =)
+        (list '< <)
+        (list '> >)))
 
 (define (primitive-procedure-names)
   (map car primitive-procedures))
@@ -418,12 +427,12 @@
 (define the-global-environment (setup-environment))
 
 
-(define input-prompt ";;; M-eval input:")
-(define output-prompt  ";;; M-eval value:")
+(define input-prompt ";;; L-Eval input:")
+(define output-prompt  ";;; L-Eval value:")
 (define (driver-loop)
   (prompt-for-input input-prompt)
   (let ((input (read)))
-   (let ((output (evaln input the-global-environment)))
+   (let ((output (force-it (evaln input the-global-environment))))
     (announce-output output-prompt)
     (user-print output)))
   (driver-loop))
@@ -441,4 +450,28 @@
                      (procedure-body object)
                      '<procedure-env>))
       (display object)))
+
+(define (force-it obj)
+  (cond ((thunk? obj)
+         (let ((result (actual-value 
+                         (thunk-proc obj)
+                         (thunk-env obj))))
+           (set-car! obj 'evaluated-thunk)
+           (set-car! (cdr obj) result)
+           (set-cdr! (cdr obj) '())
+           result))
+        ((evaluated-thunk? obj) (thunk-value ob))
+        (else obj)))
+
+(define (delay-it proc env)
+  (list 'thunk proc env))
+
+(define (thunk? obj)
+  (tagged-list? obj 'thunk))
+
+(define (thunk-proc thunk) (cadr thunk))
+(define (thunk-env thunk) (caddr thunk))
+(define (evaluated-thunk? thunk)
+  (tagged-list? thunk 'evaluated-thunk))
+(define (thunk-value evaluated-thunk) (cadr evaluated-thunk))
 
