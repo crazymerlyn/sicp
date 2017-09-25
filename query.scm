@@ -322,6 +322,14 @@
         (stream-car streams)
         (delay (flatten-stream (stream-cdr streams))))))
 
+(define (simple-stream-flatmap proc s)
+  (simple-flatten (stream-map proc s)))
+
+(define (simple-flatten streams)
+  (stream-map stream-car
+    (stream-filter (lambda (s) (not (stream-null? s)))
+                   streams)))
+
 (define (singleton-stream val)
   (cons-stream val the-empty-stream))
 
