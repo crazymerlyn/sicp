@@ -48,6 +48,16 @@
         ;; failure continuation for evaluating the predicate
         fail))))
 
+(define (analyze-if-fail exp)
+  (let ((sproc (analyze (cadr exp)))
+        (fproc (analyze (caddr exp))))
+    (lambda (env succeed fail)
+      (sproc env
+        succeed
+        ;; evaluate the failure expression
+        (lambda () (fproc env succeed fail))))))
+
+
 (define (analyze-lambda exp)
   (let ((vars (lambda-params exp))
         (bproc (analyze-sequence (lambda-body exp))))
@@ -377,6 +387,7 @@
     (cons 'set! analyze-assignment)
     (cons 'define analyze-definition)
     (cons 'if analyze-if)
+    (cons 'if-fail analyze-if-fail)
     (cons 'and analyze-and)
     (cons 'or analyze-or)
     (cons 'lambda analyze-lambda)
