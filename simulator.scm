@@ -120,17 +120,31 @@
 (define (extract-labels text receive)
   (if (null? text)
       (receive '() '())
-      (extract-labels (cdr text)
-                      (lambda (insts labels)
-                        (let ((next-inst (car txt)))
-                         (if (symbol? next-inst)
-                             (receive insts
-                                      (cons (make-label-entry next-inst
-                                                              insts)
-                                            labels))
-                             (receive (cons (make-instruction next-inst)
-                                            insts)
-                                      labels)))))))
+      (extract-labels
+        (cdr text)
+        (lambda (insts labels)
+          (let ((next-inst (car txt)))
+           (if (symbol? next-inst)
+               (receive insts
+                        (cons-label (make-label-entry next-inst
+                                                      insts)
+                                    labels))
+               (receive (cons (make-instruction next-inst)
+                              insts)
+                        labels)))))))
+
+(define (cons-label label labels)
+  (if (contains? (label-name label)
+                 (map label-name labels))
+      (error "Multiply used label: " (label-name label))
+      (cons label labels)))
+
+(define (contains? name names)
+  (if (null? names)
+      #f
+      (if (eq? (car names) name)
+          #t
+          (contains? name (cdr names)))))
 
 
 (define (update-insts! insts labels machine)
