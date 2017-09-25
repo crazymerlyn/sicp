@@ -1,4 +1,5 @@
 (load "table.scm")
+(load "streams.scm")
 
 (define *global-table* (make-generic-table))
 (define (get k1 k2)
@@ -29,6 +30,12 @@
                (qeval q (singleton-stream '()))))
            (query-driver-loop)))))
 
+(define (prompt-for-input input-prompt)
+  (newline) (newline) (display input-prompt) (newline))
+
+(define (announce-output output-prompt)
+  (newline) (display output-prompt) (newline))
+
 
 (define (instantiate exp frame unbound-var-handler)
   (define (copy exp)
@@ -53,7 +60,7 @@
     (lambda (frame)
       (stream-append-delayed
         (find-assertions query-pattern frame)
-        (delaly (apply-rules query-pattern frame))))
+        (delay (apply-rules query-pattern frame))))
     frame-stream))
 
 (define (conjoin conjuncts frame-stream)
@@ -283,7 +290,7 @@
       (var? (car pat))))
 
 (define (index-key-of pat)
-  (let ((ket (car pat)))
+  (let ((key (car pat)))
    (if (var? key) '? key)))
 
 (define (use-index? pat)
@@ -376,8 +383,9 @@
                (substring chars 1 (string-length chars))))
        symbol)))
 
-(define (var exp)
-  (eq? (car exp) '?))
+(define (var? exp)
+  (and (pair? exp)
+       (eq? (car exp) '?)))
 
 (define (constant-symbol? exp)
   (symbol? exp))
@@ -411,7 +419,7 @@
   (cdr binding))
 
 (define (binding-in-frame var frame)
-  (assoc variable frame))
+  (assoc var frame))
 
 (define (extend var val frame)
   (cons (make-binding var val) frame))
