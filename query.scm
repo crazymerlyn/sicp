@@ -1,3 +1,11 @@
+(load "table.scm")
+
+(define *global-table* (make-generic-table))
+(define (get k1 k2)
+  ((*global-table* 'lookup-proc) (list k1 k2)))
+(define (put k1 k2 val)
+  ((*global-table* 'insert-proc!) (list k1 k2) val))
+
 (define input-prompt ";;; Query input:")
 (define output-prompt ";;; Query results")
 (define (query-driver-loop)
