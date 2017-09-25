@@ -85,8 +85,19 @@
       (if (stream-null? (qeval (negated-query operands)
                                (singleton-stream frame)))
           (singleton-stream frame)
-          the-empty-stream)))
-  frame-stream)
+          the-empty-stream))
+    frame-stream))
+
+(define (unique-asserted operands frame-stream)
+  (stream-flatmap
+    (lambda (frame)
+      (let ((val (qeval (unique-query operands)
+                        (singleton-stream frame))))
+        (if (and (not (stream-null? val))
+                 (stream-null? (stream-cdr val)))
+            val
+            the-empty-stream)))
+    frame-stream))
 
 (define (lisp-value call frame-stream)
   (stream-flatmap
@@ -106,6 +117,7 @@
 (put 'and 'qeval conjoin)
 (put 'or 'qeval disjoin)
 (put 'not 'qeval negate)
+(put 'unique 'qeval unique-asserted)
 (put 'lisp-value 'qeval lisp-value)
 (put 'always-true 'qeval always-true)
 
@@ -359,7 +371,8 @@
 (define (first-disjunct exps) (car exps))
 (define (rest-disjuncts exps) (cdr exps))
 
-(define (negated-query exp) (car exps))
+(define (negated-query exps) (car exps))
+(define (unique-query exps) (car exps))
 (define (predicate exps) (car exps))
 (define (args exps) (cdr exps))
 
