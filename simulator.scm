@@ -1,11 +1,8 @@
-(define (make-machine register-names ops controller-text)
+(define (make-machine ops controller-text)
   (let ((machine (make-new-machine)))
-   (for-each (lambda (register-name)
-               ((machine 'allocate-register) register-name))
-             (register-names))
    ((machine 'install-operations) ops)
    ((machine 'install-instruction-sequence)
-    (assembe controller-text machine))
+    (assemble controller-text machine))
    machine))
 
 (define (make-register name)
@@ -14,6 +11,7 @@
      (cond ((eq? m 'get) contents)
            ((eq? m 'set)
             (lambda (new-val) (set! contents new-val)))
+           ((eq? m 'name) name)
            (else
              (error "Unknown request -- REGISTER" m))))
    dispatch))
@@ -54,8 +52,8 @@
 
 
 (define (make-new-machine)
-  (let ((pc (make-register))
-        (flag (make-register))
+  (let ((pc (make-register 'pc))
+        (flag (make-register 'flag))
         (stack (make-stack))
         (the-instruction-sequence '()))
     (let ((the-ops
@@ -67,14 +65,16 @@
         (if (assoc register-name register-table)
             (error "Multiply defined register:" register-name)
             (set! register-table
-              (cons (list register-name (make-register))
+              (cons (list register-name (make-register register-name))
                     register-table)))
         'register-allocated)
       (define (lookup-register name)
         (let ((entry (assoc name register-table)))
          (if entry
              (cadr entry)
-             (error "Unknown register -- LOOKUP-REGISTER" name))))
+             (begin
+               (allocate-register name)
+               (cadr (assoc name register-table))))))
       (define (execute)
         (let ((insts (get-contents pc)))
          (if (null? insts)
@@ -91,10 +91,11 @@
               ((eq? m 'allocate-register) allocate-register)
               ((eq? m 'get-register) lookup-register)
               ((eq? m 'install-operations)
-               (lambda (ops) (set! the-ops (append the-opps ops))))
+               (lambda (ops) (set! the-ops (append the-ops ops))))
               ((eq? m 'stack) stack)
               ((eq? m 'operations) the-ops)
-              (else (error "Unknown request -- MACHINE" m)))))))
+              (else (error "Unknown request -- MACHINE" m))))
+      dispatch)))
 
 (define (start machine)
   (machine 'start))
@@ -123,7 +124,7 @@
       (extract-labels
         (cdr text)
         (lambda (insts labels)
-          (let ((next-inst (car txt)))
+          (let ((next-inst (car text)))
            (if (symbol? next-inst)
                (receive insts
                         (cons-label (make-label-entry next-inst
@@ -148,7 +149,7 @@
 
 
 (define (update-insts! insts labels machine)
-  (let ((pc (get-register-contents machine 'pc))
+  (let ((pc (get-register machine 'pc))
         (flag (get-register-contents machine 'flag))
         (stack (machine 'stack))
         (ops (machine 'operations)))
@@ -186,7 +187,7 @@
 
 
 
-(define (make-execution-procedure insts labels machine
+(define (make-execution-procedure inst labels machine
                                   pc flag stack ops)
   (cond ((eq? (car inst) 'assign)
          (make-assign inst machine labels ops pc))
@@ -209,12 +210,12 @@
 
 (define (make-assign inst machine labels ops pc)
   (let ((target
-          (get-registerm machine (assign-reg-name inst)))
+          (get-register machine (assign-reg-name inst)))
         (value-exp (assign-value-exp inst)))
     (let ((value-proc
             (if (operation-exp? value-exp)
                 (make-operation-exp
-                  value-exp machine labels operations)
+                  value-exp machine labels ops)
                 (make-primitive-exp
                   (car value-exp) machine labels))))
       (lambda ()
@@ -341,7 +342,7 @@
 (define (make-operation-exp exp machine labels ops)
   (if (any label-exp? (operation-exp-operands exp))
       (error "Can't use labels with operations"))
-  (let ((op (lookup-prim (operation-exp-op exp) operations))
+  (let ((op (lookup-prim (operation-exp-op exp) ops))
         (aprocs
           (map (lambda (e)
                  (make-primitive-exp e machine labels))
