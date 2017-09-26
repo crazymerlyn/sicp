@@ -6,12 +6,20 @@
    machine))
 
 (define (make-register name)
-  (let ((contents '*unassigned*))
+  (let ((contents '*unassigned*)
+        (trace #f))
    (define (dispatch m)
      (cond ((eq? m 'get) contents)
            ((eq? m 'set)
-            (lambda (new-val) (set! contents new-val)))
+            (lambda (new-val)
+              (if trace
+                  (begin
+                    (display (list name contents new-val))
+                    (newline)))
+              (set! contents new-val)))
            ((eq? m 'name) name)
+           ((eq? m 'trace-on) (set! trace #t))
+           ((eq? m 'trace-off) (set! trace #f))
            (else
              (error "Unknown request -- REGISTER" m))))
    dispatch))
@@ -102,6 +110,10 @@
                (set! instruction-count 0))
               ((eq? m 'trace-on) (set! trace #t))
               ((eq? m 'trace-off) (set! trace #f))
+              ((eq? m 'register-trace-on) (lambda (name)
+                                            ((lookup-register name) 'trace-on)))
+              ((eq? m 'register-trace-off) (lambda (name)
+                                             ((lookup-register name) 'trace-off)))
               ((eq? m 'install-instruction-sequence)
                (lambda (seq) (set! the-instruction-sequence seq)))
               ((eq? m 'allocate-register) allocate-register)
