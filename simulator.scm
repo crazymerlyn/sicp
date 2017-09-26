@@ -339,6 +339,8 @@
 
 
 (define (make-operation-exp exp machine labels ops)
+  (if (any label-exp? (operation-exp-operands exp))
+      (error "Can't use labels with operations"))
   (let ((op (lookup-prim (operation-exp-op exp) operations))
         (aprocs
           (map (lambda (e)
