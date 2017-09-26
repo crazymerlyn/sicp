@@ -475,6 +475,14 @@
            (lookup-variable-value var (enclosing-environment env))
            (binding 'value)))))
 
+(define (lexical-address-lookup env frame-number binding-number)
+  (let* ((frame (list-ref env frame-number))
+         (binding (list-ref frame binding-number))
+         (value (binding 'value)))
+    (if (eq? value '*unassigned*)
+        (error "Trying to access value before assignment")
+        value)))
+
 
 (define (set-variable-value! var val env)
   (if (eq? the-empty-environment env)
@@ -483,6 +491,11 @@
        (if (null? binding)
            (set-variable-value! var val (enclosing-environment env))
            ((binding 'set-value!) val)))))
+
+(define (lexical-address-set! env frame-number val binding-number)
+  (let* ((frame (list-ref env frame-number))
+         (binding (list-ref frame binding-number)))
+    ((binding 'set-value!) val)))
 
 (define (define-variable! var val env)
   (let* ((frame (first-frame env))
