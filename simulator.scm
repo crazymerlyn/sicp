@@ -93,7 +93,7 @@
                (if trace
                    (begin
                      (for-each (lambda (label)
-                                 (display (label-name label))
+                                 (display label)
                                  (newline))
                                (get-labels-before-inst (car insts)))
                      (display (instruction-text (car insts)))
@@ -198,7 +198,7 @@
   (car inst))
 
 (define (add-label-to-inst label inst)
-  (set-car! (cdr inst) (cons label (cadr inst))))
+  (set-car! (cdr inst) (cons (label-name label) (cadr inst))))
 
 (define (get-labels-before-inst inst)
   (cadr inst))
