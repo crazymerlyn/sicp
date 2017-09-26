@@ -615,3 +615,14 @@
   (tagged-list? thunk 'evaluated-thunk))
 (define (thunk-value evaluated-thunk) (cadr evaluated-thunk))
 
+
+(define (get-global-environment)
+  the-global-environment)
+
+(define (empty-arglist) '())
+(define (last-operand? exp)
+  (and (pair? exp) (null? (cdr exp))))
+
+(define (adjoin-arg arg vals)
+  (append vals (list arg)))
+
