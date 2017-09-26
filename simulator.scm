@@ -82,7 +82,7 @@
          (if (null? insts)
              'done
              (begin
-               (if trace (begin (display (caar insts)) (newline)))
+               (if trace (begin (display (instruction-text (car insts))) (newline)))
                ((instruction-execution-proc (car insts)))
                (set! instruction-count (+ instruction-count 1))
                (execute)))))
