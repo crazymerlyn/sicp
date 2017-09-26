@@ -32,22 +32,37 @@
 
 
 (define (make-stack)
-  (let ((s '()))
+  (let ((s '())
+        (pushes 0)
+        (max-depth 0)
+        (current-depth 0))
    (define (push val)
-     (set! s (cons val s)))
+     (set! s (cons val s))
+     (set! current-depth (+ current-depth 1))
+     (set! pushes (+ pushes 1))
+     (set! max-depth (max current-depth max-depth)))
    (define (pop)
      (if (null? s)
          (error "Empty stack -- POP")
          (let ((top (car s)))
           (set! s (cdr s))
+          (set! current-depth (- current-depth 1))
           top)))
+   (define (print-statistics)
+     (newline)
+     (display (list 'total-pushes= pushes
+                    'max-depth= max-depth)))
    (define (initialize)
      (set! s '())
+     (set! pushes 0)
+     (set! max-depth 0)
+     (set! current-depth 0)
      'done)
    (define (dispatch m)
      (cond ((eq? m 'push) push)
            ((eq? m 'pop) (pop))
            ((eq? m 'initialize) (initialize))
+           ((eq? m 'print-statistics) (print-statistics))
            (else
              (error "Unknown request -- STACK" m))))
    dispatch))
@@ -68,7 +83,9 @@
         (trace #f))
     (let ((the-ops
             (list (list 'initialize-stack
-                        (lambda () (stack 'initialize)))))
+                        (lambda () (stack 'initialize)))
+                  (list 'print-stack-statistics
+                        (lambda () (stack 'print-statistics)))))
           (register-table
             (list (list 'pc pc) (list 'flag flag))))
       (define (allocate-register register-name)
