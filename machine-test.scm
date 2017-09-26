@@ -7,7 +7,8 @@
 (machine 'start)
 (newline)
 (display (get-register-contents machine 'a))
-(newline)
+(display " ")
 (display (get-register-contents machine 'b))
 (newline)
+(display (list "computed in " (machine 'get-instruction-count) " instructions"))
 

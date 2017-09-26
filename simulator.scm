@@ -55,7 +55,8 @@
   (let ((pc (make-register 'pc))
         (flag (make-register 'flag))
         (stack (make-stack))
-        (the-instruction-sequence '()))
+        (the-instruction-sequence '())
+        (instruction-count 0))
     (let ((the-ops
             (list (list 'initialize-stack
                         (lambda () (stack 'initialize)))))
@@ -81,11 +82,15 @@
              'done
              (begin
                ((instruction-execution-proc (car insts)))
+               (set! instruction-count (+ instruction-count 1))
                (execute)))))
       (define (dispatch m)
         (cond ((eq? m 'start)
                (set-contents! pc the-instruction-sequence)
                (execute))
+              ((eq? m 'get-instruction-count) instruction-count)
+              ((eq? m 'reset-instruction-count)
+               (set! instruction-count 0))
               ((eq? m 'install-instruction-sequence)
                (lambda (seq) (set! the-instruction-sequence seq)))
               ((eq? m 'allocate-register) allocate-register)
