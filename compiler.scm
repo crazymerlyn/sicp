@@ -199,6 +199,9 @@
      (compile-sequence (lambda-body exp) 'val 'return
                        (extend-compiler-env formals env)))))
 
+(define (extend-compiler-env params env)
+  (cons params env))
+
 
 (define (compile-application exp target linkage env)
   (let ((proc-code (compile (operator exp) 'proc 'next env))
