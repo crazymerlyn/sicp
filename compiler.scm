@@ -388,3 +388,17 @@
     (append (statements s1) (statements s2))))
 
 
+(define (index-of-variable var frame)
+  (cond ((null? frame) '())
+        ((eq? var (car frame)) 0)
+        (+ 1 (index-of-variable var frame))))
+
+(define (find-variable var env)
+  (if (null? env)
+      (error "Variable not found -- FIND-VARIABLE" var)
+      (let ((val (index-of-variable var (car env))))
+       (if (null? val)
+           (let ((addr (find-variable var env)))
+            (cons (+ 1 (car addr)) (cdr addr)))
+           (cons 0 . val)))))
+
