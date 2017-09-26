@@ -82,7 +82,14 @@
          (if (null? insts)
              'done
              (begin
-               (if trace (begin (display (instruction-text (car insts))) (newline)))
+               (if trace
+                   (begin
+                     (for-each (lambda (label)
+                                 (display (label-name label))
+                                 (newline))
+                               (get-labels-before-inst (car insts)))
+                     (display (instruction-text (car insts)))
+                     (newline)))
                ((instruction-execution-proc (car insts)))
                (set! instruction-count (+ instruction-count 1))
                (execute)))))
@@ -135,10 +142,10 @@
         (lambda (insts labels)
           (let ((next-inst (car text)))
            (if (symbol? next-inst)
-               (receive insts
-                        (cons-label (make-label-entry next-inst
-                                                      insts)
-                                    labels))
+               (let ((label (make-label-entry next-inst insts)))
+                (if (pair? insts) (add-label-to-inst label (car insts)))
+                (receive insts
+                         (cons-label label labels)))
                (receive (cons (make-instruction next-inst)
                               insts)
                         labels)))))))
@@ -159,7 +166,7 @@
 
 (define (update-insts! insts labels machine)
   (let ((pc (get-register machine 'pc))
-        (flag (get-register-contents machine 'flag))
+        (flag (get-register machine 'flag))
         (stack (machine 'stack))
         (ops (machine 'operations)))
     (for-each
@@ -173,20 +180,29 @@
 
 
 (define (make-instruction text)
-  (cons text '()))
+  (cons text (cons '() '())))
 
 (define (instruction-text inst)
   (car inst))
 
+(define (add-label-to-inst label inst)
+  (set-car! (cdr inst) (cons label (cadr inst))))
+
+(define (get-labels-before-inst inst)
+  (cadr inst))
+
 (define (instruction-execution-proc inst)
-  (cdr inst))
+  (cddr inst))
 
 (define (set-instruction-execution-proc! inst proc)
-  (set-cdr! inst proc))
+  (set-cdr! (cdr inst) proc))
 
 
 (define (make-label-entry label-name insts)
   (cons label-name insts))
+
+(define (label-name label)
+  (car label))
 
 (define (lookup-label labels label-name)
   (let ((val (assoc label-name labels)))
@@ -243,7 +259,7 @@
    (if (operation-exp? condition)
        (let ((condition-proc
                (make-operation-exp
-                 condition machine lables ops)))
+                 condition machine labels ops)))
          (lambda ()
            (set-contents! flag (condition-proc))
            (advance-pc! pc)))
@@ -295,7 +311,7 @@
       (push stack (get-contents reg))
       (advance-pc! pc))))
 
-(define (make-restore inst machine stack)
+(define (make-restore inst machine stack pc)
   (let ((reg (get-register machine
                            (stack-inst-reg-name inst))))
     (lambda ()
@@ -326,7 +342,7 @@
           (lambda () c)))
         ((label-exp? exp)
          (let ((insts
-                 (lookup-label lables
+                 (lookup-label labels
                                (label-exp-label exp))))
            (lambda () insts)))
         ((register-exp? exp)
