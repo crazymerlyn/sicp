@@ -4,6 +4,7 @@
                   (list (list '+ +))
                   '((assign a (const 2))
                     (assign b (op +) (reg a) (reg a)))))
+(machine 'trace-on)
 (machine 'start)
 (newline)
 (display (get-register-contents machine 'a))

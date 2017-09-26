@@ -56,7 +56,8 @@
         (flag (make-register 'flag))
         (stack (make-stack))
         (the-instruction-sequence '())
-        (instruction-count 0))
+        (instruction-count 0)
+        (trace #f))
     (let ((the-ops
             (list (list 'initialize-stack
                         (lambda () (stack 'initialize)))))
@@ -81,6 +82,7 @@
          (if (null? insts)
              'done
              (begin
+               (if trace (begin (display (caar insts)) (newline)))
                ((instruction-execution-proc (car insts)))
                (set! instruction-count (+ instruction-count 1))
                (execute)))))
@@ -91,6 +93,8 @@
               ((eq? m 'get-instruction-count) instruction-count)
               ((eq? m 'reset-instruction-count)
                (set! instruction-count 0))
+              ((eq? m 'trace-on) (set! trace #t))
+              ((eq? m 'trace-off) (set! trace #f))
               ((eq? m 'install-instruction-sequence)
                (lambda (seq) (set! the-instruction-sequence seq)))
               ((eq? m 'allocate-register) allocate-register)
